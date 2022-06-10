@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:giphys/ui/gif_page.dart';
 import 'package:http/http.dart' as http;
 
 class HomePage extends StatefulWidget {
@@ -15,8 +16,16 @@ class _HomePageState extends State<HomePage> {
       'https://api.giphy.com/v1/gifs/trending?api_key=LWadDhcLG3tR6cGEdhhJaimOx2CCO4Cp&limit=20&rating=g';
 
   String? search;
-  int page = 0;
+  int offset = 0;
   final TextEditingController _searchController = TextEditingController();
+
+  _getCount(AsyncSnapshot snapshot) {
+    if (search == null) {
+      return snapshot.data["data"].length;
+    } else {
+      return snapshot.data["data"].length + 1;
+    }
+  }
 
   Future<Map> _getGifs() async {
     http.Response response;
@@ -25,19 +34,9 @@ class _HomePageState extends State<HomePage> {
       response = await http.get(Uri.parse(requestTrend));
     } else {
       response = await http.get(Uri.parse(
-          'https://api.giphy.com/v1/gifs/search?api_key=LWadDhcLG3tR6cGEdhhJaimOx2CCO4Cp&q=$search&limit=20&offset=$page&rating=g&lang=pt'));
+          'https://api.giphy.com/v1/gifs/search?api_key=LWadDhcLG3tR6cGEdhhJaimOx2CCO4Cp&q=$search&limit=19&offset=$offset&rating=g&lang=pt'));
     }
     return json.decode(response.body);
-  }
-
-  void _search() {
-    search = _searchController.text;
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _getGifs().then((map) => print(map));
   }
 
   @override
@@ -54,6 +53,13 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           children: [
             TextField(
+              onSubmitted: (text) {
+                setState(() {
+                  search = text;
+                  offset = 0;
+                });
+                _searchController.text = '';
+              },
               controller: _searchController,
               textAlign: TextAlign.center,
               decoration: InputDecoration(
@@ -112,18 +118,50 @@ class _HomePageState extends State<HomePage> {
 
   Widget creatGifsTable(BuildContext context, AsyncSnapshot snapshot) {
     return GridView.builder(
-      padding: EdgeInsets.only(top:16),
+      padding: EdgeInsets.only(top: 16),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2, crossAxisSpacing: 10, mainAxisSpacing: 10),
-      itemCount: snapshot.data["data"].length,
+      itemCount: _getCount(snapshot),
       itemBuilder: (context, index) {
-        return GestureDetector(
-          child: Image.network(
-            snapshot.data["data"][index]["images"]["fixed_height"]["url"],
-            height: 300,
-            fit: BoxFit.cover,
-          ),
-        );
+        if (search == null || index < snapshot.data["data"].length) {
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) =>
+                          GifPage(snapshot.data["data"][index])));
+            },
+            child: Image.network(
+              snapshot.data["data"][index]["images"]["fixed_height"]["url"],
+              height: 300,
+              fit: BoxFit.cover,
+            ),
+          );
+        } else {
+          return Container(
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  offset += 19;
+                });
+              },
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.add,
+                    color: Colors.white,
+                  ),
+                  Text(
+                    'Carregar mais...',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
       },
     );
   }
