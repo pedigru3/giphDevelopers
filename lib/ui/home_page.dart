@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'package:transparent_image/transparent_image.dart';
 
 import 'package:flutter/material.dart';
 import 'package:giphys/ui/gif_page.dart';
 import 'package:http/http.dart' as http;
+import 'package:share_plus/share_plus.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -106,9 +108,9 @@ class _HomePageState extends State<HomePage> {
           return const Expanded(
             child: Center(
                 child: Text(
-              'Erro ao carregar dados',
-              style: TextStyle(color: Colors.white),
-            )),
+                  'Erro ao carregar dados',
+                  style: TextStyle(color: Colors.white),
+                )),
           );
         } else {
           return Expanded(child: creatGifsTable(context, snapshot));
@@ -125,42 +127,46 @@ class _HomePageState extends State<HomePage> {
       itemBuilder: (context, index) {
         if (search == null || index < snapshot.data["data"].length) {
           return GestureDetector(
-            onTap: () {
-              Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) =>
-                          GifPage(snapshot.data["data"][index])));
-            },
-            child: Image.network(
-              snapshot.data["data"][index]["images"]["fixed_height"]["url"],
-              height: 300,
-              fit: BoxFit.cover,
-            ),
-          );
-        } else {
-          return Container(
-            child: GestureDetector(
-              onTap: () {
-                setState(() {
-                  offset += 19;
-                });
+              onLongPress: () {
+                Share.share(
+                    snapshot.data["data"][index]["images"]["original"]["url"]);
               },
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.add,
-                    color: Colors.white,
-                  ),
-                  Text(
-                    'Carregar mais...',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ],
-              ),
-            ),
-          );
+              onTap: () {
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            GifPage(snapshot.data["data"][index])));
+              },
+              child: FadeInImage.memoryNetwork(placeholder: kTransparentImage, image:
+              snapshot.data["data"][index]["images"]["fixed_height"]["url"],
+                height: 300,
+                fit: BoxFit.cover,
+              )
+        );
+        } else {
+        return Container(
+        child: GestureDetector(
+        onTap: () {
+        setState(() {
+        offset += 19;
+        });
+        },
+        child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+        Icon(
+        Icons.add,
+        color: Colors.white,
+        ),
+        Text(
+        'Carregar mais...',
+        style: TextStyle(color: Colors.white),
+        ),
+        ],
+        ),
+        ),
+        );
         }
       },
     );
